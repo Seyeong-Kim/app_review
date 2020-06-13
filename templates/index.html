@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>앱리뷰</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css" />
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <style>
+        table {
+            width: 100%;
+        }
+
+        th {
+            height: 50px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            // index.html 로드가 완료되면 자동으로 show_star() 함수를 호출합니다.
+            appreview();
+            drawChart();
+        });
+
+        function drawChart() {
+            var ctx = document.getElementById("myChart").getContext('2d');
+            /*
+            - Chart를 생성하면서, 
+            - ctx를 첫번째 argument로 넘겨주고, 
+            - 두번째 argument로 그림을 그릴때 필요한 요소들을 모두 넘겨줍니다. 
+            */
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ["1", "2", "3", "4", "5", "6"],
+                    datasets: [{
+                        label: '# of Votes',
+                        data: [12, 19, 3, 5, 2, 3],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255,99,132,1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Chart.js Line Chart'
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: true
+                    },
+                    scales: {
+                        xAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Month'
+                            }
+                        }],
+                        yAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Value'
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+
+        function appreview() {
+            $("#reviewlist").empty()
+            $.ajax({
+                type: 'GET',
+                url: '/appreviews/list',
+                data: {},
+                async: false,
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        let appreviews = response['msg'];
+                        for (i = 0; i < appreviews.length; i++) {
+                            let appreview = appreviews[i]
+
+                            let date = appreview["date"]
+                            let review = appreview["review"]
+
+                            let temp_list = 
+                            `<tr><td>${date}</td><td>${review}</td></tr>`
+
+                            $("#reviewlist").append(temp_list)
+
+                            $("#avg").text(response["avg"]);
+                        }
+                    }
+                }
+            });
+        }
+
+        function pointReview() {
+            $('#reviewlist').empty()
+            $.ajax({
+                type: 'POST',
+                url: '/appreviews/point',
+                data: { grade: $('#select_point').val() },
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        let appreviews = response['msg'];
+                        for (i = 0; i < appreviews.length; i++) {
+                            let appreview = appreviews[i]
+
+                            let date = appreview["date"]
+                            let grade = appreview["grade"]
+                            let click = appreview["click"]
+                            let review = appreview["review"]
+
+                            let temp_list = `<li class="list-group-item">${date}, ${grade}, ${click}, ${review}</li>`
+                            $("#reviewlist").append(temp_list)
+
+                            $("#avg").text(response["avg"]);
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <section class="hero is-warning">
+        <div class="hero-body">
+            <div class="container make-center">
+                <h1 class="title">
+                    앱 리뷰
+                </h1>
+            </div>
+        </div>
+    </section>
+    <br>
+    <div style="padding-left: 159px;">
+        기간 평균 평점 :
+        <span id="avg"></span>
+    </div>
+    </div>
+
+    <div style="height:500px; width:1000px; padding-left: 159px;">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <div style="padding-left: 159px;">
+        <div>
+            <label style="font-size: 20pt;">평점 선택 </label>
+            <select id="select_point">
+                <option value="0" selected>전체</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            <button onclick="pointReview()">조회</button>
+            <br>
+            <br>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <td style="width: 100px;">날짜</td>
+                            <td style="width: 500px;">리뷰 내용</td>
+                        </tr>
+                    </thead>
+                    <tbody id="reviewlist">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
